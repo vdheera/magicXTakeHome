@@ -9,21 +9,15 @@ import SwiftUI
 import WebKit
 
 // ViewModel
-//NEED TO CLICK INSIDE THE IN APP BROWSER!
 class WebViewModel: ObservableObject {
     @Published var statusText: String = "Loading..."
-    @Published var statusTextHyperlink: URL = URL(string: "")!
     
-
     func openFirstEvent(from webView: WKWebView) {
-        
-        
-    webView.evaluateJavaScript("document.getElementsByClassName('col-xs-12 col-sm-7')[0].getElementsByTagName('a')[0].href;", completionHandler: nil)
+            webView.evaluateJavaScript("document.getElementsByClassName('col-xs-12 col-sm-7')[0].getElementsByTagName('a')[0].click();", completionHandler: nil)
+      
     }
     
     func getFirstEventName(from webView: WKWebView) {
-        
-        //gets event name
         webView.evaluateJavaScript("document.getElementsByClassName('col-xs-12 col-sm-7')[0].getElementsByTagName('span')[0].textContent", completionHandler: { (result, error) in
             if let eventName = result as? String {
                 DispatchQueue.main.async {
@@ -35,8 +29,9 @@ class WebViewModel: ObservableObject {
 }
 
 // View
+// describe how the app should look
 struct ContentView: View {
-    @ObservedObject var model = WebViewModel()
+    @StateObject var model = WebViewModel()
     @State private var webView = WKWebView()
 
     var body: some View {
@@ -44,11 +39,11 @@ struct ContentView: View {
             Text("Events Explorer")
                 .font(.largeTitle)
                 .padding()
-            WebView(url: URL(string: "https://www.sfstation.com/calendar")!, model: model)
+            //Link(url)
+            WebView(url: URL(string: "https://www.sfstation.com/calendar")!, model: model, webView: $webView)
             if model.statusText == "Loading..." {
                 Text(model.statusText)
-            }
-            else {
+            } else {
                 Text("Upcoming Event")
                     .font(.subheadline)
                     .foregroundColor(.indigo)
@@ -57,7 +52,6 @@ struct ContentView: View {
                         model.openFirstEvent(from: webView)
                     }
             }
-            
         }
     }
 }
@@ -65,10 +59,9 @@ struct ContentView: View {
 struct WebView: UIViewRepresentable {
     let url: URL
     let model: WebViewModel
-
+    @Binding var webView: WKWebView
 
     func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
         webView.navigationDelegate = context.coordinator
         webView.load(URLRequest(url: url))
         return webView
@@ -88,7 +81,7 @@ struct WebView: UIViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-                    parent.model.getFirstEventName(from: webView)
+            parent.model.getFirstEventName(from: webView)
         }
     }
 }
